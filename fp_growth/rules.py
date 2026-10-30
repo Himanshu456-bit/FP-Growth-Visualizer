@@ -1,7 +1,3 @@
-"""
-Association Rule Mining from Frequent Itemsets.
-Computes Confidence, Lift, Leverage, and Conviction.
-"""
 from __future__ import annotations
 from dataclasses import dataclass
 from itertools import combinations
@@ -12,16 +8,15 @@ from .miner import FrequentItemset
 
 @dataclass
 class AssociationRule:
-    """Represents a discovered association rule: Antecedent -> Consequent."""
     antecedent: FrozenSet[str]
     consequent: FrozenSet[str]
     antecedent_support: float
     consequent_support: float
-    support: float          # Support of Antecedent U Consequent
-    confidence: float       # P(Consequent | Antecedent) = support(A U C) / support(A)
-    lift: float             # confidence / support(C)
-    leverage: float         # support(A U C) - (support(A) * support(C))
-    conviction: float       # (1 - support(C)) / (1 - confidence)
+    support: float          
+    confidence: float       
+    lift: float             
+    leverage: float         
+    conviction: float       
 
     @property
     def antecedent_str(self) -> str:
@@ -47,32 +42,19 @@ def generate_association_rules(
     min_confidence: float = 0.5,
     min_lift: float = 1.0
 ) -> List[AssociationRule]:
-    """
-    Generate all valid association rules from a list of frequent itemsets.
-
-    Args:
-        frequent_itemsets: List of mined FrequentItemset objects.
-        min_confidence: Minimum confidence threshold (0.0 to 1.0).
-        min_lift: Minimum lift threshold (e.g. 1.0 for positive correlation).
-
-    Returns:
-        List of AssociationRule objects meeting the thresholds, sorted by lift descending.
-    """
-    # Build lookup map: frozenset -> support
+    
     support_lookup: Dict[FrozenSet[str], float] = {
         itemset.items: itemset.support for itemset in frequent_itemsets
     }
 
     rules: List[AssociationRule] = []
 
-    # Rules require itemsets with length >= 2
     multi_itemsets = [itemset for itemset in frequent_itemsets if len(itemset.items) >= 2]
 
     for itemset in multi_itemsets:
         items = list(itemset.items)
         itemset_supp = itemset.support
 
-        # Generate non-empty proper subsets as antecedents
         for r in range(1, len(items)):
             for ante_combo in combinations(items, r):
                 ante = frozenset(ante_combo)
@@ -113,6 +95,5 @@ def generate_association_rules(
                     )
                 )
 
-    # Sort rules primarily by lift descending, then confidence descending, then support descending
     rules.sort(key=lambda r: (-r.lift, -r.confidence, -r.support))
     return rules
