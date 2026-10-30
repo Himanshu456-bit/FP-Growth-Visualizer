@@ -1,15 +1,9 @@
-"""
-Command Line Interface (CLI) for FP-Growth Algorithm Showcase.
-Rich terminal visualizations, step-by-step diagnostic breakdown,
-CSV import, and custom transaction entry.
-"""
 from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
 from typing import List, Optional
 
-# Reconfigure stdout/stderr for Windows console unicode safety
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -48,7 +42,6 @@ def display_welcome_banner():
 
 
 def prompt_custom_transactions() -> List[List[str]]:
-    """Interactive prompt for entering transactions one by one."""
     console.print("\n[bold yellow]Interactive Custom Transaction Input[/bold yellow]")
     console.print("[dim]Enter items separated by commas for each transaction.[/dim]")
     console.print("[dim]Press Enter on an empty line when finished.[/dim]\n")
@@ -93,7 +86,6 @@ def run_showcase(
         f"min_confidence={min_confidence:.2f} | min_lift={min_lift:.2f}"
     )
 
-    # 1. Preview Raw Transactions
     tx_table = Table(title="Sample Transactions Preview", box=box.ROUNDED, show_header=True)
     tx_table.add_column("TID", style="cyan", width=8)
     tx_table.add_column("Items in Basket", style="white")
@@ -104,12 +96,10 @@ def run_showcase(
         tx_table.add_row("...", f"[dim]+ {len(transactions) - 8} more transactions[/dim]")
     console.print(tx_table)
 
-    # 2. Fit FP-Growth Miner
     miner = FPGrowth(min_support=min_support)
     frequent_itemsets = miner.fit(transactions)
     trace = miner.trace
-
-    # Step 1 & 2 Diagnostics
+    
     step1_table = Table(title="Step 1 & 2: 1-Item Frequency & Pruning", box=box.SIMPLE_HEAD)
     step1_table.add_column("Item", style="bold")
     step1_table.add_column("Count", justify="right")
@@ -125,7 +115,6 @@ def run_showcase(
         step1_table.add_row(item, str(count), f"{supp:.1%}", status)
     console.print(step1_table)
 
-    # Step 3 & 4: FP-Tree Display
     if miner.fp_tree:
         console.print(f"\n[bold magenta]Step 3 & 4: Constructed FP-Tree (Ordered Descending)[/bold magenta]")
         console.print(f"[dim]Header table order: {' -> '.join(trace.sorted_order)}[/dim]\n")
@@ -144,7 +133,6 @@ def run_showcase(
         rich_tree = build_rich_tree(miner.fp_tree.root)
         console.print(rich_tree)
 
-    # Step 5: Conditional Pattern Bases
     cpb_table = Table(title="Step 5: Mining Conditional Pattern Bases (Bottom-Up)", box=box.SIMPLE_HEAD)
     cpb_table.add_column("Item", style="cyan bold", width=16)
     cpb_table.add_column("Conditional Pattern Base (Prefix Paths : Count)", style="white")
@@ -157,7 +145,6 @@ def run_showcase(
         cpb_table.add_row(item, paths_str)
     console.print(cpb_table)
 
-    # Frequent Itemsets Table
     fi_table = Table(title=f"Discovered Frequent Itemsets ({len(frequent_itemsets)} Found)", box=box.ROUNDED)
     fi_table.add_column("Length", justify="center", width=8)
     fi_table.add_column("Frequent Itemset", style="green bold")
@@ -173,7 +160,6 @@ def run_showcase(
         )
     console.print(fi_table)
 
-    # Association Rules Mining
     rules = generate_association_rules(
         frequent_itemsets,
         min_confidence=min_confidence,
@@ -203,7 +189,6 @@ def run_showcase(
         )
     console.print(ar_table)
 
-    # Business Insights Summary
     if rules:
         top_rule = rules[0]
         console.print(
@@ -219,7 +204,6 @@ def run_showcase(
             )
         )
 
-    # Optional CSV Export
     if save_csv_path:
         csv_data = export_transactions_to_csv(transactions)
         Path(save_csv_path).write_text(csv_data, encoding="utf-8")
@@ -297,7 +281,7 @@ def main():
         dataset_name = "Custom String Input"
     else:
         dataset_info = BENCHMARK_DATASETS[args.dataset]
-        transactions = dataset_info["transactions"]  # type: ignore
+        transactions = dataset_info["transactions"] 
         dataset_name = str(dataset_info["name"])
 
     if not transactions:
