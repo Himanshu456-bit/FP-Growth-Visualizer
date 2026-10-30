@@ -1,8 +1,3 @@
-"""
-Streamlit Web Dashboard for FP-Growth Algorithm Showcase.
-Interactive FP-Tree visualization, itemset mining, rule analytics,
-CSV upload, and custom transaction entry.
-"""
 from __future__ import annotations
 import io
 import pandas as pd
@@ -24,7 +19,6 @@ from fp_growth.visualizer import (
     draw_rules_scatter,
 )
 
-# Page configuration
 st.set_page_config(
     page_title="FP Growth Algorithm Visualizer",
     page_icon="🌳",
@@ -32,7 +26,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling
 st.markdown("""
 <style>
     .metric-card {
@@ -44,7 +37,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state for custom transaction builder
 if "custom_builder_txs" not in st.session_state:
     st.session_state.custom_builder_txs = [
         ["Milk", "Bread", "Butter"],
@@ -59,7 +51,6 @@ if "custom_builder_txs" not in st.session_state:
         ["Milk", "Butter", "Bread", "Eggs"],
     ]
 
-# Sidebar
 st.sidebar.title("🌳 FP-Growth Controls")
 st.sidebar.markdown("Configure transaction sources & mining parameters.")
 
@@ -79,7 +70,7 @@ if data_source == "Benchmark Presets":
         format_func=lambda k: BENCHMARK_DATASETS[k]["name"]
     )
     dataset_meta = BENCHMARK_DATASETS[dataset_key]
-    transactions = [list(tx) for tx in dataset_meta["transactions"]]  # type: ignore
+    transactions = [list(tx) for tx in dataset_meta["transactions"]]
     source_label = f"Preset: {dataset_meta['name']}"
     st.sidebar.info(dataset_meta["description"])
 
@@ -90,7 +81,6 @@ elif data_source == "Upload CSV File":
         help="Upload CSV in Basket format (items per row), Long format (tid, item), or Binary matrix"
     )
     
-    # Handy download sample template
     sample_csv = "transaction_id,items\nT001,\"Milk, Bread, Butter\"\nT002,\"Bread, Butter, Eggs\"\nT003,\"Milk, Diapers, Beer\"\n"
     st.sidebar.download_button(
         label="📄 Download Sample CSV",
@@ -162,7 +152,6 @@ elif data_source == "Custom Transaction Builder":
         transactions = [list(tx) for tx in st.session_state.custom_builder_txs]
         source_label = f"Interactive Builder ({len(transactions)} transactions)"
 
-# Mining Parameters
 st.sidebar.markdown("---")
 st.sidebar.subheader("⚙️ Algorithm Hyperparameters")
 
@@ -196,7 +185,6 @@ min_lift = st.sidebar.slider(
     help="Ratio of observed support to expected support if antecedent and consequent were independent. Lift > 1 indicates positive association."
 )
 
-# Export transactions
 if transactions:
     csv_str = export_transactions_to_csv(transactions)
     st.sidebar.download_button(
@@ -206,7 +194,6 @@ if transactions:
         mime="text/csv"
     )
 
-# Title Section
 st.title("🌳 FP Growth Algorithm Visualizer")
 st.markdown(
     f"Currently analyzing: **{source_label}** | Total Baskets: **{len(transactions)}**"
@@ -216,7 +203,6 @@ if not transactions:
     st.warning("No transactions found. Please select or input transactions from the sidebar.")
     st.stop()
 
-# Run FP-Growth Mining
 miner = FPGrowth(min_support=min_support)
 frequent_itemsets = miner.fit(transactions)
 rules = generate_association_rules(
@@ -225,12 +211,10 @@ rules = generate_association_rules(
     min_lift=min_lift
 )
 
-# Compute basic dataset statistics
 all_items = [item for tx in transactions for item in tx]
 unique_items = sorted(list(set(all_items)))
 avg_basket_size = sum(len(tx) for tx in transactions) / len(transactions)
 
-# Metric KPI Cards
 c1, c2, c3, c4, c5 = st.columns(5)
 c1.metric("Total Transactions", len(transactions))
 c2.metric("Unique Items", len(unique_items))
@@ -240,7 +224,6 @@ c5.metric("Association Rules", len(rules))
 
 st.markdown("---")
 
-# Main Content Tabs
 tab1, tab2, tab3, tab4 = st.tabs([
     "📊 1. Dataset & Exploratory Analysis",
     "🌳 2. FP-Tree Architecture",
@@ -248,7 +231,6 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "🔗 4. Association Rules & Insights"
 ])
 
-# ----------------- TAB 1: DATASET EXPLORATION -----------------
 with tab1:
     st.subheader("Transaction Database Overview")
     col_left, col_right = st.columns([1, 1])
@@ -290,7 +272,6 @@ with tab1:
         st.pyplot(fig)
         plt.close(fig)
 
-# ----------------- TAB 2: FP-TREE ARCHITECTURE -----------------
 with tab2:
     st.subheader("FP-Tree Structural Topology & Diagnostics")
     st.markdown(
@@ -327,7 +308,6 @@ with tab2:
             st.pyplot(fig_tree)
             plt.close(fig_tree)
 
-# ----------------- TAB 3: FREQUENT PATTERNS & MINING -----------------
 with tab3:
     st.subheader("Frequent Itemsets Discovered")
     st.markdown(
@@ -383,7 +363,6 @@ with tab3:
                 mime="text/csv"
             )
 
-# ----------------- TAB 4: ASSOCIATION RULES & INSIGHTS -----------------
 with tab4:
     st.subheader("Association Rules Mining & Correlation Graph")
 
@@ -393,7 +372,6 @@ with tab4:
             "Try lowering the Minimum Confidence or Minimum Support sliders in the sidebar."
         )
     else:
-        # Highlight Top Rule Card
         top_rule = rules[0]
         st.success(
             f"🎯 **Key Recommendation:** When a customer purchases **{{{top_rule.antecedent_str}}}**, "
