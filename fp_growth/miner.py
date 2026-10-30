@@ -1,6 +1,3 @@
-"""
-FP-Growth Frequent Pattern Miner with diagnostic execution traces.
-"""
 from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -10,7 +7,6 @@ from .fptree import FPNode, FPTree
 
 @dataclass
 class FrequentItemset:
-    """Represents a discovered frequent itemset."""
     items: FrozenSet[str]
     count: int
     support: float
@@ -25,14 +21,12 @@ class FrequentItemset:
 
 @dataclass
 class ConditionalPatternBase:
-    """Stores the conditional pattern base for an item."""
     item: str
     paths: List[Tuple[List[str], int]] = field(default_factory=list)
 
 
 @dataclass
 class MiningTrace:
-    """Diagnostic trace showing internal stages of the FP-growth algorithm."""
     raw_item_counts: Dict[str, int] = field(default_factory=dict)
     frequent_1_items: Dict[str, int] = field(default_factory=dict)
     pruned_items: Dict[str, int] = field(default_factory=dict)
@@ -43,17 +37,8 @@ class MiningTrace:
 
 
 class FPGrowth:
-    """
-    FP-Growth Algorithm Implementation.
-    Mines frequent itemsets from a transaction database.
-    """
 
     def __init__(self, min_support: float = 0.2, min_count: Optional[int] = None):
-        """
-        Args:
-            min_support: Minimum support threshold as a fraction of total transactions (0.0 to 1.0).
-            min_count: Absolute minimum transaction count. If provided, overrides min_support.
-        """
         self.min_support = min_support
         self.min_count = min_count
         self.total_transactions = 0
@@ -63,15 +48,6 @@ class FPGrowth:
         self.trace: MiningTrace = MiningTrace()
 
     def fit(self, transactions: List[List[str]]) -> List[FrequentItemset]:
-        """
-        Execute FP-growth algorithm on the given transactions.
-
-        Args:
-            transactions: List of transactions, each transaction is an iterable of item identifiers.
-
-        Returns:
-            List of FrequentItemset objects sorted by descending support.
-        """
         self.total_transactions = len(transactions)
         if self.total_transactions == 0:
             self.frequent_itemsets = []
@@ -83,10 +59,8 @@ class FPGrowth:
         else:
             self.effective_min_count = max(1, int(self.min_support * self.total_transactions))
 
-        # Reset trace
         self.trace = MiningTrace()
 
-        # Step 1: Scan transactions to count 1-itemset frequencies
         item_counts: Dict[str, int] = defaultdict(int)
         for tx in transactions:
             unique_items = set(tx)
@@ -95,7 +69,6 @@ class FPGrowth:
 
         self.trace.raw_item_counts = dict(item_counts)
 
-        # Step 2: Filter frequent items (count >= effective_min_count)
         frequent_items = {
             item: count
             for item, count in item_counts.items()
@@ -110,7 +83,6 @@ class FPGrowth:
         self.trace.frequent_1_items = dict(frequent_items)
         self.trace.pruned_items = dict(pruned_items)
 
-        # Step 3: Sort frequent items by frequency descending, tie-break by item name
         sorted_items = sorted(
             frequent_items.keys(),
             key=lambda item: (-frequent_items[item], item)
@@ -118,14 +90,12 @@ class FPGrowth:
         self.trace.sorted_order = sorted_items
         item_rank = {item: idx for idx, item in enumerate(sorted_items)}
 
-        # Step 4: Build initial FP-Tree
         tree = FPTree()
         for item in sorted_items:
             tree.add_header_item(item, frequent_items[item])
 
         filtered_transactions = []
         for tx in transactions:
-            # Filter infrequent items and order by frequency rank
             ordered_tx = [item for item in tx if item in item_rank]
             ordered_tx.sort(key=lambda item: item_rank[item])
             if ordered_tx:
@@ -135,17 +105,15 @@ class FPGrowth:
         self.fp_tree = tree
         self.trace.filtered_transactions = filtered_transactions
 
-        # Step 5: Mine frequent patterns from FP-Tree recursively
         patterns: Dict[FrozenSet[str], int] = {}
         self._mine_tree(tree, set(), patterns, self.effective_min_count, self.trace)
 
-        # Convert to FrequentItemset list
         results: List[FrequentItemset] = []
         for itemset_keys, count in patterns.items():
             support = count / self.total_transactions
             results.append(FrequentItemset(items=itemset_keys, count=count, support=support))
 
-        # Sort by support descending, then itemset length descending
+
         results.sort(key=lambda x: (-x.support, -len(x.items), sorted(list(x.items))))
         self.frequent_itemsets = results
         return self.frequent_itemsets
@@ -158,11 +126,6 @@ class FPGrowth:
         min_count: int,
         trace: MiningTrace
     ) -> None:
-        """
-        Recursively mines the FP-tree for frequent itemsets.
-        Processes items in header table in reverse order of frequency (bottom-up).
-        """
-        # Sort header table items by frequency ascending (bottom-up traversal)
         items_ascending = sorted(
             tree.header_table.keys(),
             key=lambda x: (tree.header_table[x][0], x)
@@ -174,7 +137,6 @@ class FPGrowth:
             frozen_pattern = frozenset(new_pattern)
             patterns[frozen_pattern] = item_count
 
-            # Find all prefix paths ending at nodes of this item
             nodes = tree.get_nodes_for_item(item)
             prefix_paths: List[Tuple[List[str], int]] = []
             for node in nodes:
@@ -184,12 +146,10 @@ class FPGrowth:
 
             trace.conditional_pattern_bases[item] = prefix_paths
 
-            # Construct conditional FP-tree
             cond_tree, cond_frequent_items = self._build_conditional_tree(prefix_paths, min_count)
 
             if cond_tree is not None and cond_tree.header_table:
                 trace.conditional_trees_info[item] = cond_tree.format_tree()
-                # Recursive call
                 self._mine_tree(cond_tree, new_pattern, patterns, min_count, trace)
 
     def _build_conditional_tree(
@@ -197,14 +157,11 @@ class FPGrowth:
         prefix_paths: List[Tuple[List[str], int]],
         min_count: int
     ) -> Tuple[Optional[FPTree], Dict[str, int]]:
-        """Builds a conditional FP-tree from the prefix paths."""
-        # Calculate support count of items in conditional pattern base
         cond_item_counts: Dict[str, int] = defaultdict(int)
         for path, count in prefix_paths:
             for item in path:
                 cond_item_counts[item] += count
 
-        # Filter items satisfying min_count
         cond_frequent = {
             item: count
             for item, count in cond_item_counts.items()
@@ -214,7 +171,6 @@ class FPGrowth:
         if not cond_frequent:
             return None, {}
 
-        # Rank items descending by support
         cond_rank = sorted(cond_frequent.keys(), key=lambda x: (-cond_frequent[x], x))
         rank_map = {item: idx for idx, item in enumerate(cond_rank)}
 
@@ -223,7 +179,7 @@ class FPGrowth:
             cond_tree.add_header_item(item, cond_frequent[item])
 
         for path, count in prefix_paths:
-            # Filter and sort path
+
             filtered_path = [item for item in path if item in cond_frequent]
             filtered_path.sort(key=lambda x: rank_map[x])
             if filtered_path:
