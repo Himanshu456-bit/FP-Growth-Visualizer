@@ -1,13 +1,8 @@
-"""
-Quickstart Launcher for FP-Growth Showcase.
-Provides a simple, guided menu for first-time users.
-"""
 from __future__ import annotations
 import sys
 import subprocess
 from pathlib import Path
 
-# Safe Unicode output for Windows console
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
