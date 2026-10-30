@@ -1,10 +1,7 @@
-"""
-Visualization tools for FP-Tree and Association Rules using NetworkX and Matplotlib.
-"""
 from __future__ import annotations
 from typing import List, Dict, Optional, Tuple, Any
 import matplotlib
-matplotlib.use("Agg")  # Non-interactive backend safe for CLI and Web servers
+matplotlib.use("Agg")  
 import matplotlib.pyplot as plt
 import networkx as nx
 from .fptree import FPTree, FPNode
@@ -13,9 +10,7 @@ from .miner import FrequentItemset
 
 
 def draw_fp_tree(tree: FPTree, max_depth: int = 6) -> plt.Figure:
-    """
-    Generate a NetworkX visualization of the FP-tree with node counts and tree hierarchy.
-    """
+    
     G = nx.DiGraph()
     labels: Dict[int, str] = {}
     node_colors: List[str] = []
@@ -61,9 +56,7 @@ def draw_fp_tree(tree: FPTree, max_depth: int = 6) -> plt.Figure:
         ax.axis("off")
         return fig
 
-    # Custom hierarchical layout based on node depth
     try:
-        # Group nodes by depth for stratified layout
         depths: Dict[int, List[int]] = {}
         for n, data in G.nodes(data=True):
             d = data.get("depth", 0)
@@ -107,10 +100,6 @@ def draw_fp_tree(tree: FPTree, max_depth: int = 6) -> plt.Figure:
 
 
 def draw_association_rules_network(rules: List[AssociationRule], top_n: int = 15) -> plt.Figure:
-    """
-    Visualizes association rules as a directed bipartite graph:
-    Antecedent item -> Rule node -> Consequent item.
-    """
     fig, ax = plt.subplots(figsize=(11, 7), dpi=150)
     ax.set_title(f"Top {min(len(rules), top_n)} Association Rules Directed Graph", fontsize=14, fontweight="bold", pad=12)
 
@@ -142,9 +131,9 @@ def draw_association_rules_network(rules: List[AssociationRule], top_n: int = 15
 
     pos = nx.spring_layout(G, k=0.7, seed=42)
 
-    # Node coloring by type
-    item_color = "#38A169"  # Green
-    rule_color = "#DD6B20"  # Orange
+
+    item_color = "#38A169"  
+    rule_color = "#DD6B20"  
 
     nx.draw_networkx_nodes(
         G, pos,
@@ -159,7 +148,7 @@ def draw_association_rules_network(rules: List[AssociationRule], top_n: int = 15
         nodelist=rule_nodes,
         node_color=rule_color,
         node_size=1400,
-        node_shape="s",  # Squares for rules
+        node_shape="s", 
         alpha=0.92,
         ax=ax
     )
@@ -180,7 +169,6 @@ def draw_association_rules_network(rules: List[AssociationRule], top_n: int = 15
         ax=ax
     )
 
-    # Legend
     legend_elements = [
         plt.Line2D([0], [0], marker='o', color='w', label='Transaction Items',
                    markerfacecolor=item_color, markersize=12),
@@ -195,9 +183,6 @@ def draw_association_rules_network(rules: List[AssociationRule], top_n: int = 15
 
 
 def draw_rules_scatter(rules: List[AssociationRule]) -> plt.Figure:
-    """
-    Scatter plot comparing Rule Support vs Confidence, colored by Lift.
-    """
     fig, ax = plt.subplots(figsize=(9, 5.5), dpi=150)
     ax.set_title("Association Rules: Support vs. Confidence (Colored by Lift)", fontsize=13, fontweight="bold", pad=10)
 
